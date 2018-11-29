@@ -745,6 +745,7 @@ sysrepo_setup_with_empty_nacm_cfg(void **state)
 
     /* create empty NACM startup config */
     new_nacm_config(&nacm_config);
+
     save_nacm_config(nacm_config);
     delete_nacm_config(nacm_config);
 
@@ -3752,6 +3753,71 @@ nacm_cl_test_commit_nacm_with_ext_groups(void **state)
     }
 }
 
+/*
+   This test case addresses a problem occuring when leaves of
+   ietf-system will be modified by a unpriviledge user session.
+   During evaluation of the modified data tree a dependency to
+   NACM module leads to multiple and misleading errors.
+   -> User 'sysrepo-user1' was blocked from creating the node '/ietf-netconf-acm:nacm' by NACM.
+   -> User 'sysrepo-user1' was blocked from creating the node '/ietf-system:system/dns-resolver/server[name='S1']' by NACM
+ */
+static void
+nacm_cl_test_commit_ietf_system(void **state)
+{
+    int rc = SR_ERR_OK;
+    sr_conn_ctx_t *conn = *state;
+    sr_session_ctx_t *user_session = NULL;
+    const char *xpath = NULL, *value = NULL;
+    const sr_error_info_t *err_info;
+    size_t err_count;
+    struct ly_ctx *ly_ctx;
+    const struct lys_module *mod;
+
+    ly_ctx = ly_ctx_new(TEST_SCHEMA_SEARCH_DIR, 0);
+    assert_non_null(ly_ctx);
+    mod = ly_ctx_load_module(ly_ctx, "ietf-system@2014-08-06", NULL);
+    assert_non_null(mod);
+
+    assert_non_null_bt(conn);
+
+    char *username = NULL;
+    assert_int_equal_bt(SR_ERR_OK, sr_asprintf(&username, "sysrepo-user1"));
+
+    for (int i = 0; i < 2; ++i) {
+
+      rc = sr_session_start_user(conn, username, SR_DS_STARTUP, SR_SESS_ENABLE_NACM, &user_session);
+      assert_int_equal_bt(rc, SR_ERR_OK);
+
+      switch (i) {
+        // Good case:
+        case 0: xpath = "/ietf-interfaces:interfaces/interface[name='fri0']/type";
+                value = "iana-if-type:ethernetCsmacd";
+                break;
+        // Bad case:
+        case 1: xpath = "/ietf-system:system/dns-resolver/server[name='S1']/udp-and-tcp/address";
+                value = "1.1.1.1";
+                break;
+      }
+
+      rc = sr_set_item_str(user_session, xpath, value, SR_EDIT_DEFAULT);
+      assert_int_equal(rc, SR_ERR_OK);
+
+      rc = sr_commit(user_session);
+      assert_int_equal(rc, SR_ERR_UNAUTHORIZED);
+      // this line refers to how netopeer2-server evaluates the errors
+      sr_get_last_errors(user_session, &err_info, &err_count);
+      assert_int_equal(err_count, 1);
+
+      rc = sr_session_stop(user_session);
+      assert_int_equal(rc, SR_ERR_OK);
+    }
+
+    ly_ctx_remove_module(mod, NULL);
+    ly_ctx_destroy(ly_ctx, NULL);
+
+    free(username);
+}
+
 static int
 module_change_empty_cb(sr_session_ctx_t *session, const char *module_name, sr_notif_event_t event, void *private_ctx)
 {
@@ -4168,21 +4234,22 @@ main() {
             cmocka_unit_test_setup_teardown(nacm_cl_test_rpc_nacm, sysrepo_setup, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_rpc_nacm_with_denied_exec_by_dflt, sysrepo_setup_with_denied_exec_by_dflt, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_rpc_nacm_with_ext_groups, sysrepo_setup_with_ext_groups, sysrepo_teardown),
-        /* Event notification */
+      /* Event notification */
             cmocka_unit_test_setup_teardown(nacm_cl_test_event_notif_nacm_with_empty_nacm_cfg, sysrepo_setup_with_empty_nacm_cfg, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_event_notif_nacm, sysrepo_setup, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_event_notif_nacm_with_denied_read_by_dflt, sysrepo_setup_with_denied_read_by_dflt, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_event_notif_nacm_with_ext_groups, sysrepo_setup_with_ext_groups, sysrepo_teardown),
-        /* Commit */
+      /* Commit */
             cmocka_unit_test_setup_teardown(nacm_cl_test_commit_nacm_with_empty_nacm_cfg, sysrepo_setup_with_empty_nacm_cfg, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_commit_nacm, sysrepo_setup, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_commit_nacm_with_permitted_write_by_dflt, sysrepo_setup_with_permitted_write_by_dflt, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_commit_nacm_with_ext_groups, sysrepo_setup_with_ext_groups, sysrepo_teardown),
-        /* Copy-config */
+            cmocka_unit_test_setup_teardown(nacm_cl_test_commit_ietf_system, sysrepo_setup_with_empty_nacm_cfg, sysrepo_teardown),
+      /* Copy-config */
             cmocka_unit_test_setup_teardown(nacm_cl_test_copy_config_cand_to_run, sysrepo_setup_for_copy_config, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_copy_config_cand_to_start, sysrepo_setup_for_copy_config, sysrepo_teardown),
             cmocka_unit_test_setup_teardown(nacm_cl_test_copy_config_run_to_start, sysrepo_setup_for_copy_config, sysrepo_teardown),
-        /* NACM reload */
+      /* NACM reload */
             cmocka_unit_test_setup_teardown(nacm_cl_test_reload_nacm, sysrepo_setup, sysrepo_teardown),
     };
 

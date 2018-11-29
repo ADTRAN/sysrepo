@@ -172,6 +172,8 @@ endmacro(ENABLE_FEATURE_FOR_TESTS)
 
 if(ENABLE_NACM)
     INSTALL_YANG_FOR_TESTS("ietf-netconf-acm@2018-02-14")
+    INSTALL_YANG_FOR_TESTS("ietf-system@2014-08-06")
+    INSTALL_YANG_FOR_TESTS("iana-crypt-hash@2014-08-06")
 endif(ENABLE_NACM)
 INSTALL_YANG_FOR_TESTS("example-module")
 INSTALL_YANG_FOR_TESTS("test-module")
