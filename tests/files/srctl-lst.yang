@@ -1,0 +1,12 @@
+module srctl-lst {
+
+   namespace "urn:srctl:lst";
+   prefix sl;
+
+   import srctl-lst-imp {
+      prefix sli;
+   }
+
+   include srctl-lst-inc;
+
+}

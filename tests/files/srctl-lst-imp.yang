@@ -1,0 +1,6 @@
+module srctl-lst-imp {
+
+   namespace "urn:srctl:lst:imp";
+   prefix sli;
+
+}

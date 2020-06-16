@@ -1,0 +1,11 @@
+submodule srctl-lst-inc {
+
+   belongs-to srctl-lst {
+      prefix sl;
+   }
+
+   import srctl-lst-inc-imp {
+      prefix slii;
+   }
+
+}
