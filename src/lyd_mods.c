@@ -1233,7 +1233,7 @@ sr_lydmods_sched_ctx_install_modules(const struct lyd_node *sr_mods, struct ly_c
 
         /* enable all the features */
         for (j = 0; j < feat_set->number; ++j) {
-            if (lys_features_enable(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[j]))) {
+            if (lys_features_enable_internal(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[j]))) {
                 sr_errinfo_new_ly(&err_info, new_ctx);
                 goto cleanup;
             }
@@ -1301,7 +1301,7 @@ sr_lydmods_sched_ctx_update_modules(const struct lyd_node *sr_mods, struct ly_ct
 
         /* enable all the features */
         for (j = 0; j < feat_set->number; ++j) {
-            if (lys_features_enable(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[j]))) {
+            if (lys_features_enable_internal(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[j]))) {
                 sr_errinfo_new_ly(&err_info, new_ctx);
                 goto cleanup;
             }
@@ -1597,7 +1597,7 @@ sr_lydmods_ctx_load_module(const struct lyd_node *sr_mod, struct ly_ctx *ly_ctx,
 
     /* enable all the features */
     for (i = 0; i < feat_set->number; ++i) {
-        if (lys_features_enable(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[i]))) {
+        if (lys_features_enable_internal(ly_mod, sr_ly_leaf_value_str(feat_set->set.d[i]))) {
             sr_errinfo_new_ly(&err_info, ly_ctx);
             goto cleanup;
         }
