@@ -1,0 +1,12 @@
+module impl-wo-ds-idy {
+
+   namespace "urn:impl:wo:ds:idy";
+   prefix ii;
+
+   identity idy;
+
+   identity idy-def {
+      base idy;
+   }
+
+}

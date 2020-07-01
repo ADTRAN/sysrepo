@@ -1524,6 +1524,64 @@ test_feature_dependencies_across_modules(void **state)
     assert_int_equal(ret, SR_ERR_OK);
 }
 
+static void
+test_implemented_modules_wo_datastore(void **state)
+{
+    struct state *st = (struct state *)*state;
+    int ret;
+    uint32_t conn_count;
+
+    /* install main module */
+    ret = sr_install_module(st->conn, TESTS_DIR "/files/impl-wo-ds.yang", TESTS_DIR "/files", NULL, 0);
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* apply scheduled changes */
+    sr_disconnect(st->conn);
+    st->conn = NULL;
+    ret = sr_connection_count(&conn_count);
+    assert_int_equal(ret, SR_ERR_OK);
+    assert_int_equal(conn_count, 0);
+    ret = sr_connect(SR_CONN_ERR_ON_SCHED_FAIL, &st->conn);
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* remove main module */
+    ret = sr_remove_module(st->conn, "impl-wo-ds");
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* apply scheduled changes */
+    sr_disconnect(st->conn);
+    st->conn = NULL;
+    ret = sr_connection_count(&conn_count);
+    assert_int_equal(ret, SR_ERR_OK);
+    assert_int_equal(conn_count, 0);
+    ret = sr_connect(SR_CONN_ERR_ON_SCHED_FAIL, &st->conn);
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* remove dependent module */
+    ret = sr_remove_module(st->conn, "impl-wo-ds-aug");
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* apply scheduled changes */
+    sr_disconnect(st->conn);
+    st->conn = NULL;
+    ret = sr_connection_count(&conn_count);
+    assert_int_equal(ret, SR_ERR_OK);
+    assert_int_equal(conn_count, 0);
+    ret = sr_connect(SR_CONN_ERR_ON_SCHED_FAIL, &st->conn);
+    assert_int_equal(ret, SR_ERR_OK);
+
+    ret = sr_remove_module(st->conn, "impl-wo-ds-cnt");
+    assert_int_equal(ret, SR_ERR_OK);
+
+    /* apply scheduled changes */
+    sr_disconnect(st->conn);
+    st->conn = NULL;
+    ret = sr_connection_count(&conn_count);
+    assert_int_equal(ret, SR_ERR_OK);
+    assert_int_equal(conn_count, 0);
+    ret = sr_connect(SR_CONN_ERR_ON_SCHED_FAIL, &st->conn);
+    assert_int_equal(ret, SR_ERR_OK);
+}
 int
 main(void)
 {
@@ -1545,6 +1603,7 @@ main(void)
         cmocka_unit_test_setup_teardown(test_get_module_access, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_get_module_info, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_feature_dependencies_across_modules, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_implemented_modules_wo_datastore, setup_f, teardown_f),
     };
 
     setenv("CMOCKA_TEST_ABORT", "1", 1);

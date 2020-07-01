@@ -1,0 +1,32 @@
+module impl-wo-ds {
+
+   namespace "urn:impl:wo:ds";
+   prefix i;
+
+   import impl-wo-ds-cnt {
+      prefix ic;
+   }
+
+   import impl-wo-ds-aug {
+      prefix ia;
+   }
+
+   import impl-wo-ds-grp {
+      prefix ig;
+   }
+
+   augment "/ic:cnt" {
+      uses ig:grp;
+   }
+
+   augment "/ia:cnt/ia:lst" {
+      uses ig:grp;
+   }
+
+   notification ntf {
+      leaf nl {
+         type string;
+      }
+   }
+
+}

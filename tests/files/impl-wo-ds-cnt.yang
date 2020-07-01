@@ -1,0 +1,24 @@
+module impl-wo-ds-cnt {
+
+   namespace "urn:impl:wo:ds:cnt";
+   prefix ic;
+
+   import impl-wo-ds-grp {
+      prefix ig;
+   }
+
+   import impl-wo-ds-idy {
+      prefix ii;
+   }
+
+   container cnt {
+      uses ig:grp;
+      leaf bla {
+         type identityref {
+            base ii:idy;
+         }
+         default ii:idy-def;
+      }
+   }
+
+}

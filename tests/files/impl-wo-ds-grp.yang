@@ -1,0 +1,19 @@
+module impl-wo-ds-grp {
+
+   namespace "urn:impl:wo:ds:grp";
+   prefix ig;
+
+   import impl-wo-ds-idy {
+      prefix ii;
+   }
+
+   grouping grp {
+      leaf lea {
+         type identityref {
+            base ii:idy;
+         }
+         default ii:idy-def;
+      }
+   }
+
+}

@@ -1,0 +1,15 @@
+module impl-wo-ds-aug {
+
+   namespace "urn:impl:wo:ds:aug";
+   prefix ia;
+
+   container cnt {
+      list lst {
+         key lea;
+         leaf lea {
+            type string;
+         }
+      }
+   }
+
+}
