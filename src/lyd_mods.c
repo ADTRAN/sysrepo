@@ -1621,6 +1621,7 @@ sr_lydmods_sched_update_data(const struct lyd_node *sr_mods, const struct ly_ctx
 {
     sr_error_info_t *err_info = NULL;
     struct lyd_node *old_start_data = NULL, *new_start_data = NULL, *old_run_data = NULL, *new_run_data = NULL, *mod_data;
+    struct lys_node *data_node;
     struct ly_ctx *old_ctx = NULL;
     struct ly_set *set = NULL, *startup_set = NULL;
     const struct lys_module *ly_mod;
@@ -1647,9 +1648,30 @@ sr_lydmods_sched_update_data(const struct lyd_node *sr_mods, const struct ly_ctx
             continue;
         }
 
-        /* append startup data */
-        if ((err_info = sr_module_file_data_append(ly_mod, SR_DS_STARTUP, &old_start_data))) {
-            goto cleanup;
+        /* The libyang may have set the implemented flag of the module on its own
+         * e.g. see resolve_identref() after label match. In such cases the startup 
+         * datastore may not exist. So, check whether there are really data nodes 
+         * in this module before trying to load the startup data. 
+         */
+        for (data_node = ly_mod->data; data_node; data_node = data_node->next) {
+            if (data_node->nodetype == LYS_CONTAINER ||
+                data_node->nodetype == LYS_CHOICE    ||
+                data_node->nodetype == LYS_LEAF      ||
+                data_node->nodetype == LYS_LEAFLIST  ||
+                data_node->nodetype == LYS_LIST      ||
+                data_node->nodetype == LYS_ANYXML    ||
+                data_node->nodetype == LYS_ANYDATA
+               )
+                break;
+        }
+        if (data_node) {
+            /* append startup data */
+            if ((err_info = sr_module_file_data_append(ly_mod, SR_DS_STARTUP, &old_start_data))) {
+                goto cleanup;
+            }
+        }
+        else {
+            SR_LOG_DBG("loading of startup data skipped for %s", ly_mod->name);
         }
 
         /* check that running data file exists */
